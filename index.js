@@ -2,6 +2,8 @@
 require("dotenv").config(); // utiliza las variables de entorno .env
 const express = require("express");
 const cors = require("cors"); //  para permitir solicitudes desde el frontend.
+const fotosUsuario = require("./src/routes/fotosUsuario");
+const authRoutes = require("./src/routes/auth");
 
 // Importacion de archivos
 const connectDB = require("./src/database/connection"); // conexion mongodb
@@ -16,6 +18,8 @@ app.use(express.json());
 
 // Declaraciones de servidor(rutas que se usan, middleware,etc)
 app.use("/productos", RUTAS_PRODUCTOS);
+app.use("/fotosUsuario", fotosUsuario);
+app.use("/api/auth", authRoutes);
 
 // Inicializacion del servidor
 app.listen(process.env.PORT, () => {

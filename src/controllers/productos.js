@@ -96,82 +96,67 @@ const crearProducto = async (req, res) => {
 const actualizarProducto = async (req, res) => {
   try {
     const { id } = req.params;
+    console.log("ID recibido:", id);
+    console.log("Body recibido:", req.body);
+    console.log("Archivo recibido:", req.file);
 
-    // Validar ID
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         error: "ID no válido",
-        details: { id, body: req.body },
-      });
-    }
-
-    const {
-      nombre,
-      descripcion,
-      categoria,
-      precio,
-      descuento,
-      precioDescuento,
-    } = req.body;
-
-    // Obtener el producto actual para conservar la imagen existente
-    const productoActual = await MDB_PRODUCTOS.findById(id);
-    if (!productoActual) {
-      return res.status(404).json({
-        error: "Producto no encontrado",
         details: { id },
       });
     }
 
-    // Inicializar datos de actualización
+    // Obtener producto actual
+    const productoActual = await MDB_PRODUCTOS.findById(id);
+    if (!productoActual) {
+      return res.status(404).json({
+        error: "Producto no encontrado",
+      });
+    }
+
+    // Preparar datos de actualización
     const datosActualizacion = {
-      nombre,
-      descripcion,
-      categoria,
-      precio: Number(precio),
-      descuento: descuento ? Number(descuento) : undefined,
-      precioDescuento: precioDescuento ? Number(precioDescuento) : undefined,
-      imagen: productoActual.imagen, // Imagen existente como predeterminada
+      nombre: req.body.nombre,
+      descripcion: req.body.descripcion,
+      categoria: req.body.categoria,
+      precio: Number(req.body.precio),
+      descuento: req.body.descuento ? Number(req.body.descuento) : undefined,
+      precioDescuento: req.body.precioDescuento
+        ? Number(req.body.precioDescuento)
+        : undefined,
+      imagen: productoActual.imagen, // Mantener imagen existente por defecto
     };
 
-    // Manejo del archivo (si se proporciona uno)
-    if (req.file && req.file.size > 0) {
+    // Procesar nueva imagen si existe
+    if (req.file) {
       const timestamp = Date.now();
-      const nombreProducto = `${nombre
+      const nombreProducto = `${req.body.nombre
         .toLowerCase()
         .replace(/ /g, "_")}_${timestamp}`;
 
       const resultadoImagen = await cloudinary.uploader.upload(req.file.path, {
         public_id: `productos/${nombreProducto}`,
         folder: "productos",
-        resource_type: "auto",
         overwrite: true,
       });
 
       datosActualizacion.imagen = resultadoImagen.secure_url;
     }
 
-    // Actualizar el producto
+    // Actualizar producto
     const productoActualizado = await MDB_PRODUCTOS.findByIdAndUpdate(
       id,
       datosActualizacion,
       { new: true, runValidators: true }
     );
 
-    if (!productoActualizado) {
-      return res.status(404).json({
-        error: "Producto no encontrado",
-        details: { id },
-      });
-    }
-
     res.status(200).json(productoActualizado);
   } catch (error) {
-    console.error("Error completo:", error);
+    console.error("Error al actualizar:", error);
     res.status(500).json({
-      error: "Error al actualizar el producto",
+      error: "Error al actualizar producto",
       details: error.message,
-      stack: error.stack,
     });
   }
 };
@@ -179,22 +164,55 @@ const actualizarProducto = async (req, res) => {
 // DELETE ELIMINAR PRODUCTO
 const eliminarProducto = async (req, res) => {
   try {
-    const producto = await Producto.findById(req.params.id);
-    if (!producto)
-      return res.status(404).json({ mensaje: "Producto no encontrado" });
+    const { id } = req.params;
+    console.log("Intentando eliminar producto con ID:", id);
 
-    // Obtener el public_id de la imagen desde la URL
-    const publicId = producto.imagen.split("/").pop().split(".")[0];
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        mensaje: "ID no válido",
+        details: { id },
+      });
+    }
 
-    // Eliminar la imagen de Cloudinary
-    await cloudinary.uploader.destroy(`ecommerce_products/${publicId}`);
+    // Buscar el producto
+    const producto = await MDB_PRODUCTOS.findById(id);
+    console.log("Producto encontrado:", producto);
 
-    // Eliminar el producto de la base de datos
-    await producto.remove();
+    if (!producto) {
+      return res.status(404).json({
+        mensaje: "Producto no encontrado",
+        details: { id },
+      });
+    }
 
-    res.json({ mensaje: "Producto eliminado correctamente" });
+    try {
+      // Extraer public_id de la URL de Cloudinary
+      const urlParts = producto.imagen.split("/");
+      const publicId = urlParts[urlParts.length - 1].split(".")[0];
+      console.log("Public ID de Cloudinary:", publicId);
+
+      // Eliminar imagen de Cloudinary
+      await cloudinary.uploader.destroy(`productos/${publicId}`);
+      console.log("Imagen eliminada de Cloudinary");
+    } catch (cloudinaryError) {
+      console.error("Error al eliminar imagen de Cloudinary:", cloudinaryError);
+    }
+
+    // Eliminar producto de la base de datos
+    await MDB_PRODUCTOS.deleteOne({ _id: id });
+    console.log("Producto eliminado de la base de datos");
+
+    res.status(200).json({
+      mensaje: "Producto eliminado correctamente",
+      details: { id, nombre: producto.nombre },
+    });
   } catch (error) {
-    res.status(500).json({ mensaje: "Error al eliminar el producto", error });
+    console.error("Error completo al eliminar:", error);
+    res.status(500).json({
+      mensaje: "Error al eliminar el producto",
+      error: error.message,
+      stack: error.stack,
+    });
   }
 };
 
