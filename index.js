@@ -4,6 +4,7 @@ const express = require("express");
 const cors = require("cors"); //  para permitir solicitudes desde el frontend.
 const fotosUsuario = require("./src/routes/fotosUsuario");
 const authRoutes = require("./src/routes/auth");
+const pedidosRoutes = require("./src/routes/pedidos");
 
 // Importacion de archivos
 const connectDB = require("./src/database/connection"); // conexion mongodb
@@ -20,6 +21,7 @@ app.use(express.json());
 app.use("/productos", RUTAS_PRODUCTOS);
 app.use("/fotosUsuario", fotosUsuario);
 app.use("/api/auth", authRoutes);
+app.use("/pedidos", pedidosRoutes);
 
 // Inicializacion del servidor
 app.listen(process.env.PORT, () => {
