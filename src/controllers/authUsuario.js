@@ -35,9 +35,16 @@ exports.loginUsuario = async (req, res) => {
     if (!isMatch) return res.status(400).json({ msg: "Contraseña incorrecta" });
 
     // 🔹 Crear token JWT
-    const token = jwt.sign({ id: usuario._id }, process.env.JWT_SECRET, {
-      expiresIn: "2h",
-    });
+    const token = jwt.sign(
+      {
+        id: usuario._id,
+        email: usuario.email,
+        rol: usuario.rol, // Asegurarse de incluir el rol
+        nombre: usuario.nombre,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "24h" }
+    );
 
     // Responde con el token y los datos del usuario
     res.status(200).json({

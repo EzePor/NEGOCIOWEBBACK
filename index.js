@@ -5,6 +5,7 @@ const cors = require("cors"); //  para permitir solicitudes desde el frontend.
 const fotosUsuario = require("./src/routes/fotosUsuario");
 const authRoutes = require("./src/routes/auth");
 const pedidosRoutes = require("./src/routes/pedidos");
+const pedidoFotosRoutes = require("./src/routes/pedidoFotos");
 
 // Importacion de archivos
 const connectDB = require("./src/database/connection"); // conexion mongodb
@@ -22,6 +23,7 @@ app.use("/productos", RUTAS_PRODUCTOS);
 app.use("/fotosUsuario", fotosUsuario);
 app.use("/api/auth", authRoutes);
 app.use("/pedidos", pedidosRoutes);
+app.use("/pedidoFotos", pedidoFotosRoutes);
 
 // Inicializacion del servidor
 app.listen(process.env.PORT, () => {

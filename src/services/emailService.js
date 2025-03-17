@@ -8,6 +8,23 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+exports.enviarEmail = async ({ to, subject, html }) => {
+  try {
+    const info = await transporter.sendMail({
+      from: `"Fotos App" <${process.env.EMAIL_USER}>`,
+      to,
+      subject,
+      html,
+    });
+
+    console.log("Email enviado:", info.messageId);
+    return info;
+  } catch (error) {
+    console.error("Error al enviar email:", error);
+    throw error;
+  }
+};
+
 // Función para enviar correos
 const enviarCorreo = async (destinatario, asunto, mensaje) => {
   try {
